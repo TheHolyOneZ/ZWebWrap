@@ -1,0 +1,4 @@
+# The codebase is written to these already; stating them keeps `cargo fmt`
+# from reflowing hand-laid-out code and makes the CI gate meaningful.
+max_width = 100
+use_small_heuristics = "Max"

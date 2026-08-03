@@ -1,0 +1,75 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/zww-core",
+    "crates/zww-shortcut",
+    "crates/zww-adblock",
+    "crates/zww-bridge",
+    "apps/desktop/src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/theholyonez/ZWebWrap"
+authors = ["ZWebWrap contributors"]
+
+[workspace.dependencies]
+zww-core = { path = "crates/zww-core" }
+zww-shortcut = { path = "crates/zww-shortcut" }
+zww-adblock = { path = "crates/zww-adblock" }
+zww-bridge = { path = "crates/zww-bridge" }
+
+anyhow = "1.0.104"
+thiserror = "2.0.19"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+url = "2.5.8"
+base64 = "0.22"
+directories = "6.0.0"
+fs2 = "0.4.3"
+psl = "2.1.223"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+reqwest = { version = "0.13.4", default-features = false, features = [
+    "rustls",
+    "http2",
+    "charset",
+    "system-proxy",
+    "gzip",
+    "brotli",
+    "json",
+] }
+scraper = "0.27.0"
+image = { version = "0.25.10", default-features = false, features = [
+    "png",
+    "jpeg",
+    "ico",
+    "gif",
+    "webp",
+] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "fs"] }
+
+# Firefox keeps bookmarks in SQLite. `bundled` compiles it into the binary
+# rather than linking the system one, so Windows needs no extra dependency and
+# both platforms get the same version.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# `single-thread` is in adblock's default feature set and makes Engine !Send,
+# which would stop us sharing one engine across Tauri command threads.
+adblock = { version = "0.13.2", default-features = false, features = [
+    "embedded-domain-resolver",
+    "full-regex-handling",
+    "content-blocking",
+    "resource-assembler",
+] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

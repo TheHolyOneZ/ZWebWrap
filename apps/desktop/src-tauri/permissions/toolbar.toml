@@ -1,0 +1,24 @@
+# Tauri v2 denies every command to a remote origin unless a permission names
+# it. Without this the toolbar's buttons come back with
+# "zww_window_action not allowed. Plugin not found".
+#
+# Every command here is written to assume a hostile caller:
+#
+# - `zww_page_selectors` is read-only.
+# - `zww_window_action` acts on the calling window, with a fixed action list,
+#   and never accepts a URL.
+# - `zww_page_hidden` reports a number the page measured about itself.
+#
+# The find pair was missing here for a while and the failure was invisible: the
+# toolbar swallows a rejected call, so Ctrl+F simply did nothing and looked like
+# an unimplemented feature rather than a denied one. Anything the toolbar calls
+# has to be listed.
+
+[[permission]]
+identifier = "allow-site-toolbar"
+description = "Lets a wrapped page drive its own window toolbar, search its own document, and ask for cosmetic filter selectors."
+commands.allow = [
+  "zww_window_action",
+  "zww_page_selectors",
+  "zww_page_hidden",
+]

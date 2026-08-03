@@ -1,0 +1,79 @@
+[package]
+name = "zwebwrap"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Turn any webpage into a minimal desktop app"
+default-run = "zwebwrap"
+
+[[bin]]
+name = "zwebwrap"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+# `image-png` lets a wrapped window load its site icon from the stored PNG.
+# `tray-icon` powers the optional close-to-tray mode.
+tauri = { version = "2.11.5", features = ["image-png", "tray-icon"] }
+tauri-plugin-single-instance = "2.4.3"
+tauri-plugin-opener = "2.5.4"
+# Summon a wrapped app from anywhere, which is the point of a player you keep
+# beside other work.
+tauri-plugin-global-shortcut = "2"
+
+# The "where do you want this?" dialog for downloads. Used directly rather than
+# through a Tauri plugin: the destination has to be chosen synchronously inside
+# the download callback, which is what rfd's blocking API gives us.
+rfd = { version = "0.15", default-features = false, features = ["gtk3", "tokio"] }
+
+zww-core.workspace = true
+zww-shortcut.workspace = true
+zww-adblock.workspace = true
+zww-bridge.workspace = true
+
+anyhow.workspace = true
+directories.workspace = true
+base64.workspace = true
+image.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+# WebView2's own permission and (later) other webview events, reached through the
+# controller Tauri hands back from `with_webview`. Pinned to the versions wry
+# links against so the COM types are the same ones Tauri returns.
+webview2-com = "0.38"
+# `PropertiesSystem` is the window property store that carries the per-window
+# AppUserModelID; `StructuredStorage` is the PROPVARIANT it is written as.
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
+gdkx11 = "0.18"
+x11-dl = "2.21"
+# Must stay on the same versions wry links against, or the webview handle we
+# get back from `with_webview` would be a different, incompatible type.
+webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }
+webkit2gtk-sys = { version = "=2.0.2", features = ["v2_38"] }
+
+[dev-dependencies]
+tempfile = "3"
+image.workspace = true
+tokio = { workspace = true, features = ["rt", "macros"] }

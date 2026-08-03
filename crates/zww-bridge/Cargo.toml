@@ -1,0 +1,21 @@
+[package]
+name = "zww-bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Protocol and native-messaging transport between the ZWebWrap extension and the desktop app"
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+directories.workspace = true
+zww-core.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+# Native-messaging hosts are found through HKCU on Windows, not a directory.
+winreg = "0.55"

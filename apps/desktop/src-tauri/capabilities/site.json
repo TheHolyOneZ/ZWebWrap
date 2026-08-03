@@ -1,0 +1,21 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "site-windows",
+  "description": "The minimum a wrapped site needs for its hover toolbar and for generic cosmetic filtering.",
+  "comment": "Wrapped windows show somebody else's page, so this grants remote origins the ability to call ZWebWrap commands. Only two exist and both assume a hostile caller: `zww_page_selectors` is read-only, and `zww_window_action` acts on the calling window with a fixed action list and never takes a URL. No core or plugin permissions are granted here - the manager keeps those.",
+  "windows": [
+    "app-*"
+  ],
+  "comment2": "Four patterns, not two. A URL pattern with no port means the protocol's default, so `https://*` covers ordinary sites but silently denies anything on an explicit port — a wrapped intranet dashboard on `http://server:8080/` got no toolbar, no cosmetic filtering and no find, with every failure swallowed by its caller. The `:*` variants cover those; the trailing `/*` covers paths below the root.",
+  "remote": {
+    "urls": [
+      "http://*/*",
+      "https://*/*",
+      "http://*:*/*",
+      "https://*:*/*"
+    ]
+  },
+  "permissions": [
+    "allow-site-toolbar"
+  ]
+}

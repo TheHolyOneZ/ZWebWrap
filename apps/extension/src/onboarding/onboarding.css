@@ -1,0 +1,61 @@
+.onboard {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.mark--big {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+
+.onboard h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-2);
+  max-width: 52ch;
+  line-height: 1.6;
+}
+
+.status {
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--bg-tint);
+  font-size: 0.85rem;
+}
+
+.status--found {
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+  background: color-mix(in srgb, var(--ok) 10%, transparent);
+  color: var(--ok);
+}
+
+.status--missing {
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1.9;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capabilities for the ZWebWrap manager window.",
+  "comment": "Scoped to the manager label on purpose. Site windows show somebody else's page, so they are granted nothing and cannot reach any command.",
+  "windows": [
+    "manager"
+  ],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "allow-manager"
+  ]
+}

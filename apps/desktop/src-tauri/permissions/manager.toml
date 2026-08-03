@@ -1,0 +1,49 @@
+# Commands the manager window uses.
+#
+# Once any permission file names commands, Tauri switches to explicit-allow for
+# every app command, so the manager needs its own grant or it fails with
+# "list_apps not allowed. Command not found". These are only reachable from the
+# manager window; the `default` capability is scoped to that label alone.
+#
+# A command missing from this list does not error visibly — the invoke promise
+# rejects, and UI code that sensibly ignores a failed read swallows it. The
+# download panel stayed empty for exactly that reason. `every_command_the_ui_calls_is_permitted`
+# guards the list now; add the command here whenever you add one to `api.ts`.
+
+[[permission]]
+identifier = "allow-manager"
+description = "Everything the ZWebWrap library window needs to manage apps and settings."
+commands.allow = [
+  "list_apps",
+  "preview_url",
+  "create_app",
+  "update_app",
+  "delete_app",
+  "has_desktop_shortcut",
+  "open_app",
+  "icon_data_url",
+  "set_app_icon",
+  "reset_app_icon",
+  "adblock_status",
+  "refresh_filters",
+  "media_support",
+  "user_agent_presets",
+  "get_preferences",
+  "autostart_active",
+  "valid_hotkey",
+  "platform_report",
+  "discover_bookmarks",
+  "import_bookmarks",
+  "set_preferences",
+  "reveal_data_dir",
+  "data_location",
+  "app_credential",
+  "set_app_credential",
+  "valid_proxy",
+  "open_link",
+  "list_downloads",
+  "open_download",
+  "reveal_download",
+  "clear_downloads",
+  "hidden_counts",
+]

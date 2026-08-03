@@ -1,0 +1,44 @@
+[package]
+name = "zww-shortcut"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Desktop shortcut creation for ZWebWrap"
+
+[dependencies]
+anyhow.workspace = true
+tracing.workspace = true
+zww-core.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+directories.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+directories.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# `.lnk` writing, and the PNG -> multi-size `.ico` conversion it needs.
+mslnk = "0.1.8"
+ico = "0.4"
+image.workspace = true
+# `mslnk` cannot write a shortcut's AppUserModelID, and without one the taskbar
+# treats a pinned shortcut and the running window as two different apps. The
+# property is stamped on afterwards through the shell's own interfaces.
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_PropertiesSystem",
+] }
+
+[dev-dependencies]
+tempfile = "3"
+serde.workspace = true
+serde_json.workspace = true
+ico = "0.4"
+image.workspace = true

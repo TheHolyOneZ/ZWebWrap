@@ -1,0 +1,32 @@
+{
+  "name": "zwebwrap",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "description": "Turn any webpage into a minimal desktop app. Not a browser.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "tauri": "node apps/desktop/scripts/tauri.mjs",
+    "dev": "node apps/desktop/scripts/tauri.mjs dev",
+    "build": "node apps/desktop/scripts/tauri.mjs build",
+    "ext:dev": "pnpm --filter @zwebwrap/extension dev",
+    "ext:build": "pnpm --filter @zwebwrap/extension build",
+    "typecheck": "pnpm -r typecheck",
+    "check:i18n": "pnpm --filter @zwebwrap/desktop check:i18n",
+    "test": "cargo test --workspace",
+    "fmt": "cargo fmt --all && prettier --write \"**/*.{ts,tsx,json,css,md}\"",
+    "lint:rs": "cargo clippy --workspace --all-targets -- -D warnings"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

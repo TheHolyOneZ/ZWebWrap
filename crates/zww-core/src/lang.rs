@@ -1,0 +1,529 @@
+pub fn active() -> &'static str {
+    let stored = crate::prefs::load().language;
+    if let Some(code) = stored.as_deref().and_then(supported) {
+        return code;
+    }
+
+    for key in ["LC_ALL", "LC_MESSAGES", "LANG"] {
+        let Ok(value) = std::env::var(key) else { continue };
+        if value.is_empty() || value == "C" || value == "POSIX" {
+            continue;
+        }
+        if let Some(code) = supported(&value) {
+            return code;
+        }
+    }
+    "en"
+}
+
+fn supported(tag: &str) -> Option<&'static str> {
+    let base = tag
+        .split(['.', '@'])
+        .next()
+        .unwrap_or(tag)
+        .split(['-', '_'])
+        .next()
+        .unwrap_or(tag)
+        .to_ascii_lowercase();
+
+    ["en", "de", "es", "fr", "it", "ja", "nl", "pl", "pt", "ru", "tr", "zh"]
+        .into_iter()
+        .find(|code| *code == base)
+}
+
+pub fn t(locale: &str, key: Key) -> &'static str {
+    let table = match locale {
+        "de" => DE,
+        "es" => ES,
+        "fr" => FR,
+        "pt" => PT,
+        "it" => IT,
+        "nl" => NL,
+        "pl" => PL,
+        "tr" => TR,
+        "ru" => RU,
+        "ja" => JA,
+        "zh" => ZH,
+        _ => EN,
+    };
+    table[key as usize]
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Key {
+    Back,
+    Forward,
+    Reload,
+    AlwaysOnTop,
+    Volume,
+    CopyAddress,
+    OpenInBrowser,
+    Maximise,
+    Close,
+    AddressCopied,
+    OnTop,
+    NotOnTop,
+    Muted,
+    Unmuted,
+    AskNotifications,
+    AskMicrophone,
+    AskCamera,
+    AskLocation,
+    Allow,
+    DontAllow,
+    Find,
+    Previous,
+    Next,
+    Compact,
+    NoVideo,
+    Downloads,
+    DownloadFinished,
+    DownloadFailed,
+    NoDownloadsYet,
+    OpenFile,
+    ShowInFolder,
+}
+
+const COUNT: usize = 31;
+
+const EN: [&str; COUNT] = [
+    "Back",
+    "Forward",
+    "Reload",
+    "Always on top",
+    "Click to mute, hover for volume",
+    "Copy address",
+    "Open in browser",
+    "Maximise",
+    "Close",
+    "Address copied",
+    "Always on top",
+    "Not on top",
+    "Muted",
+    "Unmuted",
+    "Show notifications from this app?",
+    "Let this app use your microphone?",
+    "Let this app use your camera?",
+    "Let this app see your location?",
+    "Allow",
+    "Don't allow",
+    "Find on page",
+    "Previous match",
+    "Next match",
+    "Compact player",
+    "No video on this page",
+    "Downloads",
+    "Download finished",
+    "Download failed",
+    "Nothing downloaded yet",
+    "Open",
+    "Show in folder",
+];
+
+const DE: [&str; COUNT] = [
+    "Zurück",
+    "Vorwärts",
+    "Neu laden",
+    "Immer im Vordergrund",
+    "Klicken zum Stummschalten, für die Lautstärke darauf zeigen",
+    "Adresse kopieren",
+    "Im Browser öffnen",
+    "Maximieren",
+    "Schließen",
+    "Adresse kopiert",
+    "Immer im Vordergrund",
+    "Nicht im Vordergrund",
+    "Stumm",
+    "Ton an",
+    "Benachrichtigungen dieser App anzeigen?",
+    "Dieser App das Mikrofon erlauben?",
+    "Dieser App die Kamera erlauben?",
+    "Dieser App deinen Standort erlauben?",
+    "Erlauben",
+    "Nicht erlauben",
+    "Auf der Seite suchen",
+    "Vorheriger Treffer",
+    "Nächster Treffer",
+    "Kompakter Player",
+    "Auf dieser Seite ist kein Video",
+    "Downloads",
+    "Download abgeschlossen",
+    "Download fehlgeschlagen",
+    "Noch nichts heruntergeladen",
+    "Öffnen",
+    "Im Ordner anzeigen",
+];
+
+const ES: [&str; COUNT] = [
+    "Atrás",
+    "Adelante",
+    "Recargar",
+    "Siempre visible",
+    "Clic para silenciar, pasa el ratón para el volumen",
+    "Copiar la dirección",
+    "Abrir en el navegador",
+    "Maximizar",
+    "Cerrar",
+    "Dirección copiada",
+    "Siempre visible",
+    "Ya no siempre visible",
+    "Silenciado",
+    "Con sonido",
+    "¿Mostrar notificaciones de esta aplicación?",
+    "¿Permitir que esta aplicación use tu micrófono?",
+    "¿Permitir que esta aplicación use tu cámara?",
+    "¿Permitir que esta aplicación vea tu ubicación?",
+    "Permitir",
+    "No permitir",
+    "Buscar en la página",
+    "Coincidencia anterior",
+    "Coincidencia siguiente",
+    "Reproductor compacto",
+    "No hay vídeo en esta página",
+    "Descargas",
+    "Descarga completada",
+    "Error en la descarga",
+    "Todavía no hay descargas",
+    "Abrir",
+    "Mostrar en la carpeta",
+];
+
+const FR: [&str; COUNT] = [
+    "Retour",
+    "Suivant",
+    "Recharger",
+    "Toujours au premier plan",
+    "Cliquer pour couper le son, survoler pour le volume",
+    "Copier l’adresse",
+    "Ouvrir dans le navigateur",
+    "Agrandir",
+    "Fermer",
+    "Adresse copiée",
+    "Toujours au premier plan",
+    "Plus au premier plan",
+    "Son coupé",
+    "Son rétabli",
+    "Afficher les notifications de cette application ?",
+    "Autoriser cette application à utiliser votre micro ?",
+    "Autoriser cette application à utiliser votre caméra ?",
+    "Autoriser cette application à voir votre position ?",
+    "Autoriser",
+    "Refuser",
+    "Rechercher dans la page",
+    "Occurrence précédente",
+    "Occurrence suivante",
+    "Lecteur compact",
+    "Aucune vidéo sur cette page",
+    "Téléchargements",
+    "Téléchargement terminé",
+    "Échec du téléchargement",
+    "Rien de téléchargé",
+    "Ouvrir",
+    "Afficher dans le dossier",
+];
+
+const PT: [&str; COUNT] = [
+    "Voltar",
+    "Avançar",
+    "Recarregar",
+    "Sempre visível",
+    "Clique para silenciar, passe o mouse para o volume",
+    "Copiar o endereço",
+    "Abrir no navegador",
+    "Maximizar",
+    "Fechar",
+    "Endereço copiado",
+    "Sempre visível",
+    "Não mais sempre visível",
+    "Sem som",
+    "Com som",
+    "Mostrar notificações deste aplicativo?",
+    "Permitir que este aplicativo use o microfone?",
+    "Permitir que este aplicativo use a câmera?",
+    "Permitir que este aplicativo veja sua localização?",
+    "Permitir",
+    "Não permitir",
+    "Buscar na página",
+    "Ocorrência anterior",
+    "Próxima ocorrência",
+    "Player compacto",
+    "Não há vídeo nesta página",
+    "Transferências",
+    "Transferência concluída",
+    "Falha na transferência",
+    "Ainda nada transferido",
+    "Abrir",
+    "Mostrar na pasta",
+];
+
+const IT: [&str; COUNT] = [
+    "Indietro",
+    "Avanti",
+    "Ricarica",
+    "Sempre in primo piano",
+    "Clic per silenziare, passa sopra per il volume",
+    "Copia l'indirizzo",
+    "Apri nel browser",
+    "Ingrandisci",
+    "Chiudi",
+    "Indirizzo copiato",
+    "Sempre in primo piano",
+    "Non più in primo piano",
+    "Silenziato",
+    "Audio attivo",
+    "Mostrare le notifiche di questa applicazione?",
+    "Consentire il microfono a questa applicazione?",
+    "Consentire la fotocamera a questa applicazione?",
+    "Consentire la posizione a questa applicazione?",
+    "Consenti",
+    "Non consentire",
+    "Cerca nella pagina",
+    "Risultato precedente",
+    "Risultato successivo",
+    "Lettore compatto",
+    "Nessun video in questa pagina",
+    "Download",
+    "Download completato",
+    "Download non riuscito",
+    "Ancora nessun download",
+    "Apri",
+    "Mostra nella cartella",
+];
+
+const NL: [&str; COUNT] = [
+    "Terug",
+    "Vooruit",
+    "Herladen",
+    "Altijd op voorgrond",
+    "Klik om te dempen, wijs aan voor het volume",
+    "Adres kopiëren",
+    "In browser openen",
+    "Maximaliseren",
+    "Sluiten",
+    "Adres gekopieerd",
+    "Altijd op voorgrond",
+    "Niet meer op voorgrond",
+    "Gedempt",
+    "Geluid aan",
+    "Meldingen van deze app tonen?",
+    "Deze app de microfoon toestaan?",
+    "Deze app de camera toestaan?",
+    "Deze app je locatie toestaan?",
+    "Toestaan",
+    "Niet toestaan",
+    "Zoeken op de pagina",
+    "Vorige treffer",
+    "Volgende treffer",
+    "Compacte speler",
+    "Geen video op deze pagina",
+    "Downloads",
+    "Download voltooid",
+    "Download mislukt",
+    "Nog niets gedownload",
+    "Openen",
+    "Toon in map",
+];
+
+const PL: [&str; COUNT] = [
+    "Wstecz",
+    "Dalej",
+    "Odśwież",
+    "Zawsze na wierzchu",
+    "Kliknij, aby wyciszyć; najedź, aby ustawić głośność",
+    "Kopiuj adres",
+    "Otwórz w przeglądarce",
+    "Maksymalizuj",
+    "Zamknij",
+    "Adres skopiowany",
+    "Zawsze na wierzchu",
+    "Już nie na wierzchu",
+    "Wyciszone",
+    "Dźwięk włączony",
+    "Pokazywać powiadomienia tej aplikacji?",
+    "Zezwolić tej aplikacji na mikrofon?",
+    "Zezwolić tej aplikacji na kamerę?",
+    "Zezwolić tej aplikacji na lokalizację?",
+    "Zezwól",
+    "Nie zezwalaj",
+    "Szukaj na stronie",
+    "Poprzedni wynik",
+    "Następny wynik",
+    "Kompaktowy odtwarzacz",
+    "Na tej stronie nie ma wideo",
+    "Pobrane",
+    "Pobieranie zakończone",
+    "Pobieranie nie powiodło się",
+    "Nic jeszcze nie pobrano",
+    "Otwórz",
+    "Pokaż w folderze",
+];
+
+const TR: [&str; COUNT] = [
+    "Geri",
+    "İleri",
+    "Yenile",
+    "Her zaman üstte",
+    "Sesi kapatmak için tıkla, ses düzeyi için üzerine gel",
+    "Adresi kopyala",
+    "Tarayıcıda aç",
+    "Büyüt",
+    "Kapat",
+    "Adres kopyalandı",
+    "Her zaman üstte",
+    "Artık üstte değil",
+    "Sessiz",
+    "Sesli",
+    "Bu uygulamanın bildirimleri gösterilsin mi?",
+    "Bu uygulamaya mikrofon izni verilsin mi?",
+    "Bu uygulamaya kamera izni verilsin mi?",
+    "Bu uygulamaya konum izni verilsin mi?",
+    "İzin ver",
+    "İzin verme",
+    "Sayfada ara",
+    "Önceki eşleşme",
+    "Sonraki eşleşme",
+    "Küçük oynatıcı",
+    "Bu sayfada video yok",
+    "İndirilenler",
+    "İndirme tamamlandı",
+    "İndirme başarısız",
+    "Henüz indirilen yok",
+    "Aç",
+    "Klasörde göster",
+];
+
+const RU: [&str; COUNT] = [
+    "Назад",
+    "Вперёд",
+    "Обновить",
+    "Поверх всех окон",
+    "Нажмите, чтобы отключить звук; наведите для громкости",
+    "Копировать адрес",
+    "Открыть в браузере",
+    "Развернуть",
+    "Закрыть",
+    "Адрес скопирован",
+    "Поверх всех окон",
+    "Не поверх окон",
+    "Без звука",
+    "Звук включён",
+    "Показывать уведомления этого приложения?",
+    "Разрешить приложению микрофон?",
+    "Разрешить приложению камеру?",
+    "Разрешить приложению доступ к местоположению?",
+    "Разрешить",
+    "Не разрешать",
+    "Поиск на странице",
+    "Предыдущее совпадение",
+    "Следующее совпадение",
+    "Компактный плеер",
+    "На этой странице нет видео",
+    "Загрузки",
+    "Загрузка завершена",
+    "Ошибка загрузки",
+    "Пока нет загрузок",
+    "Открыть",
+    "Показать в папке",
+];
+
+const JA: [&str; COUNT] = [
+    "戻る",
+    "進む",
+    "再読み込み",
+    "常に手前に表示",
+    "クリックでミュート、ホバーで音量",
+    "アドレスをコピー",
+    "ブラウザで開く",
+    "最大化",
+    "閉じる",
+    "アドレスをコピーしました",
+    "常に手前に表示",
+    "手前表示を解除",
+    "ミュート",
+    "ミュート解除",
+    "このアプリの通知を表示しますか?",
+    "このアプリにマイクの使用を許可しますか?",
+    "このアプリにカメラの使用を許可しますか?",
+    "このアプリに位置情報を許可しますか?",
+    "許可",
+    "許可しない",
+    "ページ内を検索",
+    "前の一致",
+    "次の一致",
+    "コンパクトプレーヤー",
+    "このページに動画はありません",
+    "ダウンロード",
+    "ダウンロード完了",
+    "ダウンロード失敗",
+    "ダウンロードはまだありません",
+    "開く",
+    "フォルダーで表示",
+];
+
+const ZH: [&str; COUNT] = [
+    "后退",
+    "前进",
+    "重新加载",
+    "总在最前",
+    "点击静音，悬停调音量",
+    "复制网址",
+    "在浏览器中打开",
+    "最大化",
+    "关闭",
+    "网址已复制",
+    "总在最前",
+    "已取消置顶",
+    "已静音",
+    "已取消静音",
+    "显示此应用的通知？",
+    "允许此应用使用麦克风？",
+    "允许此应用使用摄像头？",
+    "允许此应用获取位置？",
+    "允许",
+    "不允许",
+    "在页面中查找",
+    "上一个匹配",
+    "下一个匹配",
+    "紧凑播放器",
+    "此页面没有视频",
+    "下载",
+    "下载完成",
+    "下载失败",
+    "还没有下载",
+    "打开",
+    "在文件夹中显示",
+];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_table_is_the_same_length() {
+        for table in [EN, DE, ES, FR, IT, NL, PL, PT, RU, TR, JA, ZH] {
+            assert_eq!(table.len(), COUNT);
+            assert!(table.iter().all(|s| !s.is_empty()), "no placeholder blanks");
+        }
+    }
+
+    #[test]
+    fn an_unknown_locale_falls_back_to_english() {
+        assert_eq!(t("kl", Key::Reload), "Reload");
+        assert_eq!(t("de", Key::Reload), "Neu laden");
+    }
+
+    #[test]
+    fn region_tags_narrow_to_the_language() {
+        assert_eq!(supported("pt_BR.UTF-8"), Some("pt"));
+        assert_eq!(supported("de-AT"), Some("de"));
+        assert_eq!(supported("fr"), Some("fr"));
+        assert_eq!(supported("en_GB"), Some("en"));
+    }
+
+    #[test]
+    fn languages_we_do_not_ship_are_not_claimed() {
+        assert_eq!(supported("kl"), None, "Greenlandic is not shipped");
+        assert_eq!(supported("C"), None);
+        assert_eq!(supported(""), None);
+    }
+}
