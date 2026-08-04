@@ -287,9 +287,28 @@ A fresh install opens on a **seven-step tour** that points at each of these in
 turn, plus the hover toolbar you would otherwise have to find by accident. Skip
 it with Escape; run it again any time from **Settings → General**.
 
-It follows your desktop's light or dark theme unless you pick one, and speaks
-**twelve languages**: English, German, Spanish, French, Italian, Japanese,
-Dutch, Polish, Portuguese, Russian, Turkish, Chinese.
+It follows your desktop's light or dark theme unless you pick one.
+
+### Languages
+
+The whole interface — every menu, hint and error — is translated into **twelve
+languages**, each listed in its own name so somebody who has landed in the wrong
+one can find their way out:
+
+|          |            |         |           |
+| -------- | ---------- | ------- | --------- |
+| English  | Deutsch    | Español | Français  |
+| Italiano | Nederlands | Polski  | Português |
+| Türkçe   | Русский    | 日本語  | 中文      |
+
+It follows your system's language by default; **Settings → General → Language**
+overrides that. A region tag narrows to its base language, so `pt-BR` gets
+Portuguese rather than falling back to English.
+
+These are real translations rather than machine output left unchecked, and the
+build refuses to publish a locale that has drifted: `check:i18n` fails if any
+language is missing a string the English has, so a half-translated release
+cannot ship.
 
 ---
 
