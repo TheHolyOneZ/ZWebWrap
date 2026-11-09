@@ -1,4 +1,4 @@
-name: Build ZWebWrap (Linux)
+name: Build ZWebWrap (Windows + Linux)
 
 on:
   workflow_dispatch:
@@ -16,6 +16,67 @@ env:
   APPIMAGE_EXTRACT_AND_RUN: "1"
 
 jobs:
+  build-windows:
+    name: Windows x64 (NSIS + MSI)
+    runs-on: windows-2025
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Set up Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          workspaces: ". -> target"
+          key: windows-x64
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Rust tests (on real Windows)
+        continue-on-error: true
+        run: cargo test --workspace --locked
+
+      - name: Build installers and the browser extension
+        run: pnpm tauri build
+
+      - name: List bundle output
+        if: always()
+        shell: pwsh
+        run: Get-ChildItem target/release/bundle -Recurse -Include *.exe,*.msi -ErrorAction SilentlyContinue | ForEach-Object { "{0}  {1:N1} MB" -f $_.FullName, ($_.Length / 1MB) }
+
+      - name: Upload Windows installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            target/release/bundle/nsis/*.exe
+            target/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 30
+
   build-linux:
     name: Linux x86_64 (.deb + .rpm + AppImage)
     runs-on: ubuntu-24.04
@@ -99,7 +160,7 @@ jobs:
 
   draft-release:
     name: Draft release
-    needs: [build-linux]
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -146,7 +207,7 @@ jobs:
       - name: Collect installers
         run: |
           mkdir -p release
-          find dist -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' -o -name '*.zip' \) -exec cp {} release/ \;
+          find dist -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' -o -name '*.zip' -o -name '*.exe' -o -name '*.msi' \) -exec cp {} release/ \;
           test -n "$(ls -A release)" || { echo "::error::No installers found"; exit 1; }
           (cd release && sha256sum * > SHA256SUMS.txt)
           ls -lah release/
@@ -162,6 +223,8 @@ jobs:
           body: |
             **Draft.** Packages for ZWebWrap ${{ steps.meta.outputs.tag }}:
 
+            - **Windows 10/11:** `ZWebWrap_${{ steps.meta.outputs.version }}_x64-setup.exe`
+            - **Windows (managed / MSI):** `ZWebWrap_${{ steps.meta.outputs.version }}_x64_en-US.msi`
             - **Debian / Ubuntu / Mint:** `ZWebWrap_${{ steps.meta.outputs.version }}_amd64.deb`
             - **Fedora / openSUSE:** `ZWebWrap-${{ steps.meta.outputs.version }}-1.x86_64.rpm`
             - **Any distro:** `ZWebWrap_${{ steps.meta.outputs.version }}_amd64.AppImage`
