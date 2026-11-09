@@ -1,0 +1,34 @@
+# WebHID.
+#
+# `allow-site-hid` is granted to wrapped sites and so assumes a hostile caller.
+# Every command checks that the calling window label starts with `app-`, and
+# nothing but `zww_hid_request_device` can create access: that one shows a
+# native chooser window the page cannot script, and the grant covers only what
+# the user picked there, for that window, until it closes.
+#
+# `allow-hid-chooser` is granted to the chooser window alone. Its commands
+# check the `hid-chooser-` label themselves as well, so a wrapped site that
+# somehow named them would be refused.
+
+[[permission]]
+identifier = "allow-site-hid"
+description = "Lets a wrapped page use WebHID through the host, limited to devices the user picked."
+commands.allow = [
+  "zww_hid_get_devices",
+  "zww_hid_request_device",
+  "zww_hid_forget",
+  "zww_hid_open",
+  "zww_hid_close",
+  "zww_hid_send_report",
+  "zww_hid_send_feature_report",
+  "zww_hid_receive_feature_report",
+]
+
+[[permission]]
+identifier = "allow-hid-chooser"
+description = "The native device chooser's own commands."
+commands.allow = [
+  "hid_chooser_state",
+  "hid_chooser_choose",
+  "hid_chooser_cancel",
+]

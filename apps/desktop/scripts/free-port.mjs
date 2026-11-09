@@ -1,15 +1,17 @@
-
-
 import { createConnection } from "node:net";
 import { execFileSync } from "node:child_process";
 
 const PORT = Number(process.env.ZWEBWRAP_DEV_PORT ?? 1420);
 
-
+/**
+ * @param {number} port
+ * @param {string} host
+ * @returns {Promise<boolean>}
+ */
 function inUse(port, host) {
   return new Promise((resolve) => {
     const socket = createConnection({ port, host });
-    const done = ( result) => {
+    const done = (/** @type {boolean} */ result) => {
       socket.destroy();
       resolve(result);
     };
@@ -20,13 +22,13 @@ function inUse(port, host) {
   });
 }
 
-
+/** @param {number} port */
 async function isFree(port) {
   const [v4, v6] = await Promise.all([inUse(port, "127.0.0.1"), inUse(port, "::1")]);
   return !v4 && !v6;
 }
 
-
+/** @param {number} port */
 function holdersOf(port) {
   try {
     if (process.platform === "win32") {
@@ -50,7 +52,7 @@ function holdersOf(port) {
   }
 }
 
-
+/** @param {string} pid */
 function describe(pid) {
   try {
     if (process.platform === "win32") return "";
@@ -64,7 +66,7 @@ if (await isFree(PORT)) {
   process.exit(0);
 }
 
-
+/** @param {string} pid */
 function workingDirOf(pid) {
   try {
     return execFileSync("readlink", ["-f", `/proc/${pid}/cwd`], { encoding: "utf8" }).trim();
@@ -103,6 +105,5 @@ for (const pid of holdersOf(PORT)) {
 }
 
 if (freed) {
-
   await new Promise((r) => setTimeout(r, 400));
 }

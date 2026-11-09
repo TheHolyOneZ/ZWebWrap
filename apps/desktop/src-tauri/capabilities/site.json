@@ -16,6 +16,7 @@
     ]
   },
   "permissions": [
-    "allow-site-toolbar"
+    "allow-site-toolbar",
+    "allow-site-hid"
   ]
 }

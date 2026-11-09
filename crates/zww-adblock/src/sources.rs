@@ -37,6 +37,12 @@ pub const DEFAULT_SOURCES: &[Source] = &[
 pub const SCRIPTLETS_DIR_API: &str =
     "https://api.github.com/repos/gorhill/uBlock/contents/src/js/resources";
 
+pub const SCRIPTLET_SUPPORT_FILES: &[&str] = &[
+    "https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/arglist-parser.js",
+    "https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/jsonpath.js",
+    "https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/urlskip.js",
+];
+
 pub const SCRIPTLETS_URL: &str =
     "https://raw.githubusercontent.com/gorhill/uBlock/master/src/js/resources/scriptlets.js";
 

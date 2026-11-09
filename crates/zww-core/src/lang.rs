@@ -82,9 +82,13 @@ pub enum Key {
     NoDownloadsYet,
     OpenFile,
     ShowInFolder,
+    HidTitle,
+    HidNone,
+    HidConnect,
+    HidCancel,
 }
 
-const COUNT: usize = 31;
+const COUNT: usize = 35;
 
 const EN: [&str; COUNT] = [
     "Back",
@@ -118,6 +122,10 @@ const EN: [&str; COUNT] = [
     "Nothing downloaded yet",
     "Open",
     "Show in folder",
+    "Choose a device",
+    "No compatible devices found",
+    "Connect",
+    "Cancel",
 ];
 
 const DE: [&str; COUNT] = [
@@ -152,6 +160,10 @@ const DE: [&str; COUNT] = [
     "Noch nichts heruntergeladen",
     "Öffnen",
     "Im Ordner anzeigen",
+    "Gerät auswählen",
+    "Keine kompatiblen Geräte gefunden",
+    "Verbinden",
+    "Abbrechen",
 ];
 
 const ES: [&str; COUNT] = [
@@ -186,6 +198,10 @@ const ES: [&str; COUNT] = [
     "Todavía no hay descargas",
     "Abrir",
     "Mostrar en la carpeta",
+    "Elige un dispositivo",
+    "No se encontraron dispositivos compatibles",
+    "Conectar",
+    "Cancelar",
 ];
 
 const FR: [&str; COUNT] = [
@@ -220,6 +236,10 @@ const FR: [&str; COUNT] = [
     "Rien de téléchargé",
     "Ouvrir",
     "Afficher dans le dossier",
+    "Choisir un appareil",
+    "Aucun appareil compatible trouvé",
+    "Connecter",
+    "Annuler",
 ];
 
 const PT: [&str; COUNT] = [
@@ -254,6 +274,10 @@ const PT: [&str; COUNT] = [
     "Ainda nada transferido",
     "Abrir",
     "Mostrar na pasta",
+    "Escolha um dispositivo",
+    "Nenhum dispositivo compatível encontrado",
+    "Conectar",
+    "Cancelar",
 ];
 
 const IT: [&str; COUNT] = [
@@ -288,6 +312,10 @@ const IT: [&str; COUNT] = [
     "Ancora nessun download",
     "Apri",
     "Mostra nella cartella",
+    "Scegli un dispositivo",
+    "Nessun dispositivo compatibile trovato",
+    "Connetti",
+    "Annulla",
 ];
 
 const NL: [&str; COUNT] = [
@@ -322,6 +350,10 @@ const NL: [&str; COUNT] = [
     "Nog niets gedownload",
     "Openen",
     "Toon in map",
+    "Kies een apparaat",
+    "Geen compatibele apparaten gevonden",
+    "Verbinden",
+    "Annuleren",
 ];
 
 const PL: [&str; COUNT] = [
@@ -356,6 +388,10 @@ const PL: [&str; COUNT] = [
     "Nic jeszcze nie pobrano",
     "Otwórz",
     "Pokaż w folderze",
+    "Wybierz urządzenie",
+    "Nie znaleziono zgodnych urządzeń",
+    "Połącz",
+    "Anuluj",
 ];
 
 const TR: [&str; COUNT] = [
@@ -390,6 +426,10 @@ const TR: [&str; COUNT] = [
     "Henüz indirilen yok",
     "Aç",
     "Klasörde göster",
+    "Bir cihaz seçin",
+    "Uyumlu cihaz bulunamadı",
+    "Bağlan",
+    "İptal",
 ];
 
 const RU: [&str; COUNT] = [
@@ -424,6 +464,10 @@ const RU: [&str; COUNT] = [
     "Пока нет загрузок",
     "Открыть",
     "Показать в папке",
+    "Выберите устройство",
+    "Совместимые устройства не найдены",
+    "Подключить",
+    "Отмена",
 ];
 
 const JA: [&str; COUNT] = [
@@ -458,6 +502,10 @@ const JA: [&str; COUNT] = [
     "ダウンロードはまだありません",
     "開く",
     "フォルダーで表示",
+    "デバイスを選択",
+    "対応するデバイスが見つかりません",
+    "接続",
+    "キャンセル",
 ];
 
 const ZH: [&str; COUNT] = [
@@ -492,6 +540,10 @@ const ZH: [&str; COUNT] = [
     "还没有下载",
     "打开",
     "在文件夹中显示",
+    "选择设备",
+    "未找到兼容的设备",
+    "连接",
+    "取消",
 ];
 
 #[cfg(test)]

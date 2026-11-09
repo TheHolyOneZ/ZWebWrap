@@ -227,24 +227,130 @@ fn find_key(block: &str, key: &str) -> Option<usize> {
 }
 
 fn function_source(source: &str, name: &str) -> Option<String> {
-    let mut cursor = 0;
-    while let Some(found) = source[cursor..].find("function") {
-        let at = cursor + found;
-        cursor = at + "function".len();
+    for keyword in ["function", "class"] {
+        let mut cursor = 0;
+        while let Some(found) = source[cursor..].find(keyword) {
+            let at = cursor + found;
+            cursor = at + keyword.len();
 
-        let after = source[cursor..].trim_start();
-        if !after.starts_with(name) {
-            continue;
+            let word_start = source[..at]
+                .chars()
+                .next_back()
+                .is_none_or(|c| !c.is_alphanumeric() && c != '_' && c != '$');
+            if !word_start {
+                continue;
+            }
+
+            let after = source[cursor..].trim_start();
+            let Some(rest) = after.strip_prefix(name) else { continue };
+            let next = rest.trim_start();
+            let opens = if keyword == "function" {
+                next.starts_with('(')
+            } else {
+                next.starts_with('{') || next.starts_with("extends")
+            };
+            if !opens {
+                continue;
+            }
+
+            let search_from = if keyword == "function" {
+                let paren = cursor + (source[cursor..].len() - next.len());
+                matching_paren(source, paren)? + 1
+            } else {
+                at
+            };
+            let open = source[search_from..].find('{').map(|i| search_from + i)?;
+            let close = matching_brace(source, open)?;
+            let start = if keyword == "function" && source[..at].trim_end().ends_with("async") {
+                let head = source[..at].trim_end();
+                let word = head.len() - "async".len();
+                let before_ok = head[..word]
+                    .chars()
+                    .next_back()
+                    .is_none_or(|c| !c.is_alphanumeric() && c != '_' && c != '$');
+                if before_ok {
+                    word
+                } else {
+                    at
+                }
+            } else {
+                at
+            };
+            return Some(source[start..=close].to_string());
         }
+    }
+    None
+}
 
-        let next = after[name.len()..].trim_start();
-        if !next.starts_with('(') {
-            continue;
+fn regex_end(bytes: &[u8], at: usize) -> Option<usize> {
+    let mut back = at;
+    while back > 0 && bytes[back - 1].is_ascii_whitespace() {
+        back -= 1;
+    }
+    let starts = match back.checked_sub(1).map(|i| bytes[i]) {
+        None => true,
+        Some(c) if b"(,=:[!&|?{};+-*%<>~^".contains(&c) => true,
+        Some(c) if c.is_ascii_alphabetic() => {
+            let mut b = back;
+            while b > 0 && (bytes[b - 1].is_ascii_alphanumeric() || bytes[b - 1] == b'_') {
+                b -= 1;
+            }
+            matches!(&bytes[b..back], b"return" | b"typeof" | b"case" | b"in" | b"of")
         }
+        _ => false,
+    };
+    if !starts {
+        return None;
+    }
+    let mut i = at + 1;
+    let mut class = false;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'\\' => i += 1,
+            b'\n' => return None,
+            b'[' => class = true,
+            b']' => class = false,
+            b'/' if !class => return Some(i),
+            _ => {}
+        }
+        i += 1;
+    }
+    None
+}
 
-        let open = source[at..].find('{').map(|i| at + i)?;
-        let close = matching_brace(source, open)?;
-        return Some(source[at..=close].to_string());
+fn matching_paren(source: &str, open: usize) -> Option<usize> {
+    let bytes = source.as_bytes();
+    let mut depth = 0i32;
+    let mut quote: Option<u8> = None;
+    let mut i = open;
+    while i < bytes.len() {
+        let b = bytes[i];
+        match quote {
+            Some(q) => {
+                if b == b'\\' {
+                    i += 1;
+                } else if b == q {
+                    quote = None;
+                }
+            }
+            None => match b {
+                b'\'' | b'"' | b'`' => quote = Some(b),
+                b'/' => {
+                    if let Some(end) = regex_end(bytes, i) {
+                        i = end;
+                    }
+                }
+                b'(' => depth += 1,
+                b')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(i);
+                    }
+                }
+                _ => {}
+            },
+        }
+        i += 1;
     }
     None
 }
@@ -283,6 +389,11 @@ fn matching_brace(source: &str, open: usize) -> Option<usize> {
                     i += 1;
                 }
                 i += 1;
+            }
+            b'/' => {
+                if let Some(end) = regex_end(bytes, i) {
+                    i = end;
+                }
             }
             _ => {}
         }
@@ -407,6 +518,34 @@ function jsonPruneFetchResponse() { return 2; }
     }
 
     #[test]
+    fn a_default_parameter_object_does_not_end_the_signature() {
+        let src = "function pruneFn(\n  a,\n  opts = {}\n) {\n  return a;\n}";
+        let body = function_source(src, "pruneFn").expect("found");
+        assert!(body.ends_with("return a;\n}"), "got: {body}");
+    }
+
+    #[test]
+    fn a_regex_with_a_quote_does_not_derail_the_brace_match() {
+        let src = "function f(a) {\n  const m = /^(\"?)(.+)\\1$/.exec(a);\n  if (m) { return 1; }\n}\nfunction g() {}";
+        let body = function_source(src, "f").expect("found");
+        assert!(body.ends_with("return 1; }\n}"), "got: {body}");
+    }
+
+    #[test]
+    fn async_is_kept() {
+        let body = function_source("const x = async function run(a) { await a; }", "run").unwrap();
+        assert!(body.starts_with("async function run"), "got: {body}");
+    }
+
+    #[test]
+    fn a_class_helper_is_captured_whole() {
+        let src = "export class RangeParser {\n  constructor(x) { this.x = x; }\n}\nregisterScriptlet(RangeParser, { name: 'range-parser.fn' });";
+        let parsed = parse(src);
+        let helper = parsed.iter().find(|r| r.name == "range-parser.fn").expect("class helper");
+        assert!(decode(&helper.content).starts_with("class RangeParser {"));
+    }
+
+    #[test]
     fn function_body_is_captured_whole() {
         let resources = parse(SAMPLE);
         let prune = resources.iter().find(|r| r.name == "json-prune.js").unwrap();
@@ -520,7 +659,7 @@ function jsonPruneFetchResponse() { return 2; }
         assert_eq!(base64_encode(b"function x(){}"), "ZnVuY3Rpb24geCgpe30=");
     }
 
-    fn decode(b64: &str) -> String {
+    pub(super) fn decode(b64: &str) -> String {
         use base64::Engine as _;
         String::from_utf8(base64::engine::general_purpose::STANDARD.decode(b64).unwrap()).unwrap()
     }

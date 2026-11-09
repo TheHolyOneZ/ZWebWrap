@@ -116,7 +116,6 @@ pub fn delete_app(id: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-
     #![allow(clippy::await_holding_lock)]
 
     use super::*;

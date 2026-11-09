@@ -59,6 +59,8 @@ const NAV_SHIM: &str = r#"
 })();
 "#;
 
+const HID_SHIM: &str = include_str!("hid_shim.js");
+
 pub fn open_manager(app: &AppHandle, panel: Option<&str>) -> Result<WebviewWindow> {
     if let Some(existing) = app.get_webview_window(MANAGER_LABEL) {
         let _ = existing.show();
@@ -181,19 +183,16 @@ pub fn open_site(app: &AppHandle, wrapped: &WrappedApp, persist: bool) -> Result
             .inner_size(wrapped.window.width, wrapped.window.height)
             .min_inner_size(400.0, 300.0)
 
-
             .focused(true)
 
             .visible(false)
             .on_navigation(move |target| {
                 let mut session = auth_session.lock().unwrap_or_else(|e| e.into_inner());
 
-
                 if scope::is_in_scope(target, &policy_app) {
                     *session = None;
                     return true;
                 }
-
 
                 if let Some(domain) = scope::auth_domain_for(target) {
                     tracing::debug!(app = %policy_app.id, %domain, "sign-in flow started");
@@ -201,15 +200,12 @@ pub fn open_site(app: &AppHandle, wrapped: &WrappedApp, persist: bool) -> Result
                     return true;
                 }
 
-
                 if session.as_deref().is_some_and(|d| scope::continues_auth(target, d)) {
                     return true;
                 }
 
                 match scope::decide(target, &policy_app) {
                     scope::Decision::Allow => {
-
-
                         tracing::debug!(url = %target, app = %policy_app.id, "navigation allowed");
                         true
                     }
@@ -218,11 +214,8 @@ pub fn open_site(app: &AppHandle, wrapped: &WrappedApp, persist: bool) -> Result
                         false
                     }
                     scope::Decision::HandOff => {
-
-
                         if PROBES_OFFSITE_DOWNLOADS && scope::looks_like_a_download(target) {
                             tracing::debug!(url = %target, app = %policy_app.id, "off-site link looks like a file; letting it start");
-
 
                             if let Ok(mut slot) = policy_probe.lock() {
                                 *slot = Some(target.to_string());
@@ -267,6 +260,8 @@ pub fn open_site(app: &AppHandle, wrapped: &WrappedApp, persist: bool) -> Result
     }
 
     builder = builder.initialization_script(crate::overlay::FIND_JS);
+
+    builder = builder.initialization_script(HID_SHIM);
 
     builder = builder.initialization_script(crate::overlay::localized_toolbar());
 
@@ -314,6 +309,7 @@ pub fn open_site(app: &AppHandle, wrapped: &WrappedApp, persist: bool) -> Result
     relax_tracking_prevention(&window);
     apply_fullscreen_containment(&window, &wrapped.id);
     install_permission_policy(&window, &wrapped.id);
+    release_hid_on_close(&window);
     install_offsite_response_policy(&window, wrapped, probe);
     install_basic_auth(&window, &wrapped.id);
     enable_spell_checking(&window);
@@ -479,7 +475,6 @@ fn install_offsite_response_policy(
                 return false;
             };
 
-
             if !response.is_mime_type_supported() {
                 tracing::debug!("response cannot be displayed; downloading it instead");
                 unsafe {
@@ -488,14 +483,12 @@ fn install_offsite_response_policy(
                 return true;
             }
 
-
             if !response.is_main_frame_main_resource() {
                 return false;
             }
 
             let Some(uri) = response.request().and_then(|r| r.uri()) else { return false };
             let Ok(target) = Url::parse(&uri) else { return false };
-
 
             if scope::is_in_scope(&target, &app)
                 || app.offsite == zww_core::OffsitePolicy::InWindow
@@ -793,7 +786,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
             }
         };
 
-
         let (menus, environment) = match (
             webview.cast::<ICoreWebView2_11>(),
             webview
@@ -815,7 +807,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
             let (Some(webview), Some(args)) = (webview, args) else { return Ok(()) };
 
             let items = unsafe { args.MenuItems()? };
-
 
             let mut count = 0_u32;
             unsafe { items.Count(&mut count)? };
@@ -846,7 +837,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
                 None
             };
 
-
             let at = std::cell::Cell::new(0_u32);
 
             let append = |item: &webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2ContextMenuItem|
@@ -855,7 +845,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
                 at.set(at.get() + 1);
                 Ok(())
             };
-
 
             let add = |label: &str,
                        action: Box<dyn Fn() + 'static>|
@@ -895,7 +884,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
                 }))?;
             }
 
-
             {
                 let separator = unsafe {
                     environment.CreateContextMenuItem(
@@ -906,7 +894,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
                 };
                 append(&separator)?;
             }
-
 
             if has_selection {
                 let webview = webview.clone();
@@ -932,7 +919,6 @@ fn install_context_menu(window: &WebviewWindow, app: AppHandle) {
                     }),
                 )?;
             }
-
 
             Ok(())
         }));
@@ -1319,8 +1305,6 @@ pub fn suspend_hidden(window: &WebviewWindow, id: &str) {
 
         let script = HSTRING::from(IS_PLAYING);
         let handler = ExecuteScriptCompletedHandler::create(Box::new(move |error, result| {
-
-
             if let Err(e) = error {
                 tracing::debug!(id = %id, error = %e, "could not ask the page; left running");
                 return Ok(());
@@ -1332,7 +1316,6 @@ pub fn suspend_hidden(window: &WebviewWindow, id: &str) {
             }
             tracing::trace!(id = %id, answer = %result.trim(), "page reports nothing playing");
 
-
             if let Err(e) = unsafe { controller.SetIsVisible(false) } {
                 tracing::debug!(id = %id, error = %e, "could not hide the controller; not suspending");
                 return Ok(());
@@ -1343,7 +1326,6 @@ pub fn suspend_hidden(window: &WebviewWindow, id: &str) {
             let done = TrySuspendCompletedHandler::create(Box::new(move |error, succeeded| {
                 match (error, succeeded) {
                     (Ok(()), true) => tracing::debug!(id = %id, "suspended while hidden"),
-
 
                     (Ok(()), false) => {
                         tracing::debug!(id = %id, "suspend refused; left running");
@@ -1453,6 +1435,15 @@ fn remember_geometry(window: &WebviewWindow, id: &str) {
             }
         }
         _ => {}
+    });
+}
+
+fn release_hid_on_close(window: &WebviewWindow) {
+    let label = window.label().to_string();
+    window.on_window_event(move |event| {
+        if matches!(event, WindowEvent::Destroyed) {
+            crate::hid::release_window(&label);
+        }
     });
 }
 

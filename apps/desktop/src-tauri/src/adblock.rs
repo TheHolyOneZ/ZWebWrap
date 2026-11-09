@@ -439,8 +439,6 @@ fn request_type_for(
         "xmlhttprequest"
     } else if context == COREWEBVIEW2_WEB_RESOURCE_CONTEXT_WEBSOCKET {
         "websocket"
-    } else if context == COREWEBVIEW2_WEB_RESOURCE_CONTEXT_EVENT_SOURCE {
-        "other"
     } else {
         "other"
     }
@@ -468,7 +466,6 @@ pub fn apply_content_filter(
             }
         };
 
-
         let environment = match webview.cast::<ICoreWebView2_2>().and_then(|w| unsafe { w.Environment() }) {
             Ok(environment) => environment,
             Err(e) => {
@@ -481,12 +478,10 @@ pub fn apply_content_filter(
         let handler = WebResourceRequestedEventHandler::create(Box::new(move |webview, args| {
             let (Some(webview), Some(args)) = (webview, args) else { return Ok(()) };
 
-
             let request = unsafe { args.Request()? };
             let mut raw = windows::core::PWSTR::null();
             unsafe { request.Uri(&mut raw)? };
             let url = webview2_com::take_pwstr(raw);
-
 
             let mut raw = windows::core::PWSTR::null();
             unsafe { webview.Source(&mut raw)? };
@@ -494,7 +489,6 @@ pub fn apply_content_filter(
 
             let mut context = COREWEBVIEW2_WEB_RESOURCE_CONTEXT::default();
             unsafe { args.ResourceContext(&mut context)? };
-
 
             let is_subframe = url != page_url;
             let request_type = request_type_for(context, is_subframe);
@@ -511,7 +505,6 @@ pub fn apply_content_filter(
             if !blocked {
                 return Ok(());
             }
-
 
             let response = unsafe {
                 environment.CreateWebResourceResponse(
@@ -531,7 +524,6 @@ pub fn apply_content_filter(
             }
             Ok(())
         }));
-
 
         if let Err(e) = unsafe {
             webview.AddWebResourceRequestedFilter(

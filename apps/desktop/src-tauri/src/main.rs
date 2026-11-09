@@ -5,6 +5,7 @@ mod cli;
 mod commands;
 mod create;
 mod downloads;
+mod hid;
 mod host;
 mod hotkeys;
 mod overlay;
@@ -172,6 +173,17 @@ fn run_gui(mode: Mode) {
             page::zww_page_selectors,
             page::zww_page_hidden,
             page::zww_window_action,
+            hid::zww_hid_get_devices,
+            hid::zww_hid_request_device,
+            hid::zww_hid_forget,
+            hid::zww_hid_open,
+            hid::zww_hid_close,
+            hid::zww_hid_send_report,
+            hid::zww_hid_send_feature_report,
+            hid::zww_hid_receive_feature_report,
+            hid::hid_chooser_state,
+            hid::hid_chooser_choose,
+            hid::hid_chooser_cancel,
         ])
         .setup(move |app| {
             tray::sync(app.handle());

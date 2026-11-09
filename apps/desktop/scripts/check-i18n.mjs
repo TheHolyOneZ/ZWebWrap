@@ -1,13 +1,10 @@
-
-
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-
 const here = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "i18n");
 
-
+/** @param {string} file */
 function read(file) {
   const text = readFileSync(join(here, file), "utf8");
   const out = new Map();
@@ -17,15 +14,14 @@ function read(file) {
   return out;
 }
 
-
-const placeholders = (s) => (s.match(/\{(\w+)\}/g) ?? []).sort().join(",");
+const placeholders = (/** @type {string} */ s) => (s.match(/\{(\w+)\}/g) ?? []).sort().join(",");
 
 const en = read("en.ts");
 const locales = readdirSync(here).filter((f) => /^[a-z]{2}\.ts$/.test(f) && f !== "en.ts");
 
 let failures = 0;
 
-const fail = (msg) => { failures++; console.log(`  FAIL ${msg}`); };
+const fail = (/** @type {string} */ msg) => { failures++; console.log(`  FAIL ${msg}`); };
 
 console.log(`English defines ${en.size} strings`);
 

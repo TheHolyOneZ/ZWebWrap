@@ -48,6 +48,8 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [target.'cfg(windows)'.dependencies]
+# WebHID backend for pages that talk to USB hardware (see hid.rs).
+hidapi = { version = "2.6", default-features = false, features = ["windows-native"] }
 # WebView2's own permission and (later) other webview events, reached through the
 # controller Tauri hands back from `with_webview`. Pinned to the versions wry
 # links against so the COM types are the same ones Tauri returns.
@@ -65,6 +67,9 @@ windows = { version = "0.61", features = [
 ] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+# WebHID backend for pages that talk to USB hardware (see hid.rs). hidraw, so
+# no libusb; /dev/hidraw* access still needs a udev rule on most distros.
+hidapi = { version = "2.6", default-features = false, features = ["linux-static-hidraw"] }
 gtk = "0.18"
 gdkx11 = "0.18"
 x11-dl = "2.21"

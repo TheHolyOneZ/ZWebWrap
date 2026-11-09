@@ -37,8 +37,8 @@ stay put.
 
 **Real ad blocking**
 
-A genuine filter engine — ~119,000 network rules, hidden ad slots, and partial
-YouTube ad stripping.
+A genuine filter engine — ~119,000 network rules, hidden ad slots, and YouTube
+video ads stripped from the player.
 
 </td>
 <td align="center" width="33%">
@@ -91,6 +91,7 @@ downloads live.</sub>
 ## Contents
 
 - [What you get](#what-you-get)
+- [WebHID](#webhid-usb-hardware-from-a-web-page)
 - [Platform support](#platform-support)
 - [Adding an app](#adding-an-app)
 - [The app window](#the-app-window)
@@ -118,18 +119,63 @@ ZWebWrap gives you a real desktop app instead:
 - A **window locked to one site** — a link somewhere else opens in your normal
   browser instead of turning the window into a browser
 - **Ad blocking that actually works** — a real filter engine, not hand-written
-  CSS. YouTube video ads are _partly_ handled; see [Limitations](#limitations)
+  CSS. YouTube video ads are stripped from the player, including on a directly opened video
 - **Its own settings** per app: permissions, zoom, hotkey, window frame, custom
   CSS and JavaScript
+- **WebHID, on both platforms.** Sites that configure hardware or flash
+  firmware from a web page work, because ZWebWrap supplies `navigator.hid`
+  itself; see [WebHID](#webhid-usb-hardware-from-a-web-page)
 - **One process for all of it.** Six wrapped apps do not mean six Chromiums
 - **It never calls home.** No telemetry, no update check, no ZWebWrap server —
   there isn't one. It reaches the network for the ad filter lists, and for a
   page's own title and icon when you add it. Nothing else, ever
 
 > [!WARNING]
-> **Version 0.1.0 — there has been no release yet.** No downloads, no signed
+> **Version 0.2.0 — there has been no release yet.** No downloads, no signed
 > binaries. You can build it yourself; see
 > [Building and running](#building-and-running).
+
+---
+
+## WebHID: USB hardware from a web page
+
+Keyboard configurators, controller tools, label printers, sensors and firmware
+updaters increasingly ship as a website that talks to the device through
+[WebHID](https://developer.mozilla.org/docs/Web/API/WebHID_API). WebKitGTK has
+no WebHID and WebView2 does not reliably expose it to an embedder, so ZWebWrap
+supplies its own `navigator.hid`, backed by the operating system's HID stack
+(`hidraw` on Linux, the Win32 HID API on Windows). The page sees the standard
+API — `requestDevice`, `getDevices`, `open`, `sendReport`, `sendFeatureReport`,
+`receiveFeatureReport`, `inputreport`, `connect` and `disconnect` — including the
+parsed `collections`, so vendor code written for Chrome runs unchanged. That
+covers firmware updates too, since they are ordinary output and feature
+reports.
+
+**You are asked every time.** `requestDevice()` opens a native chooser window
+the page cannot script, listing only devices that match the site's filters. A
+site can use exactly what you picked, in that window, until the window closes.
+There is no "always allow" and no background access.
+
+**Some devices are never offered**, as in Chrome: FIDO/U2F security keys, and
+any device whose only function is a keyboard, keypad, mouse or pointer —
+otherwise a web page could log your keystrokes. A keyboard's separate
+vendor-defined interface, which is what QMK/VIA use, _is_ offered.
+
+**On Linux you may need a udev rule.** `/dev/hidraw*` is root-only by default,
+and a normal user cannot open a device until a rule grants access. Most
+hardware vendors document one; a general version for a single device is:
+
+```
+# /etc/udev/rules.d/50-my-device.rules
+KERNEL=="hidraw*", ATTRS{idVendor}=="1234", ATTRS{idProduct}=="5678", TAG+="uaccess"
+```
+
+then `sudo udevadm control --reload && sudo udevadm trigger` and replug the
+device. Windows needs nothing.
+
+**Limits.** Plug and unplug events are noticed within about two seconds, not
+instantly. Access is not remembered across restarts. WebUSB, Web Serial and Web
+Bluetooth are not provided.
 
 ---
 
@@ -140,7 +186,7 @@ ZWebWrap gives you a real desktop app instead:
 | Shortcuts and icons                              |     ✅      |       ✅        |   ✅    |  ❌   |
 | **Network ad blocking**                          |     ✅      |       ✅        |   ✅    |  ❌   |
 | Ad hiding (cosmetic)                             |     ✅      |       ✅        |   ✅    |  ❌   |
-| YouTube pre-roll ads _(partly — see below)_      |     ⚠️      |       ⚠️        |   ⚠️    |  ❌   |
+| YouTube pre-roll ads                             |     ✅      |       ✅        |   ✅    |  ❌   |
 | Downloads, with a list and open / show in folder |     ✅      |       ✅        |   ✅    |  ❌   |
 | Permission prompts                               |     ✅      |       ✅        |   ✅    |  ❌   |
 | **Find in page** (<kbd>Ctrl</kbd>+<kbd>F</kbd>)  |     ✅      |       ✅        |   ✅    |  ❌   |
@@ -478,9 +524,9 @@ Three things happen:
    EasyPrivacy and three uBlock Origin lists _(Linux only for now)_
 2. **Leftover ad slots are hidden** before the page paints, so there is no empty
    box and no flash
-3. **YouTube video ads are partly stripped** out of the player itself — not
-   skipped, not fast-forwarded; where it works, the player never receives them.
-   It does not always work: see below
+3. **YouTube video ads are stripped** out of the player itself — not skipped,
+   not fast-forwarded; the player never receives them, whether you open a video
+   from another video or directly from a link, bookmark or the start page
 
 Filter lists **update themselves every 4 days**, so blocking keeps working
 without waiting for a new version of the app. You can also force an update from
@@ -496,21 +542,18 @@ you can check yourself: **Settings → Ad blocking** shows the live rule count
 and which lists are loaded, and each app's tile shows how many elements it
 hid.
 
-> [!WARNING]
-> **YouTube pre-rolls are half-blocked — expect to see one sometimes.** Opening
-> a video _from another video_ usually has no ad. Opening one **directly** — a
-> link, a bookmark, the app's own start page — usually still plays a pre-roll.
+> [!NOTE]
+> **YouTube changes its player without notice.** The ad keys are removed from
+> all three ways the player response arrives (parsed JSON, `fetch`, and the copy
+> inlined into the page). The inlined copy has to be blanked rather than
+> deleted — deleting the keys leaves the player dead — and that is the kind of
+> detail YouTube can change. If a pre-roll ever comes back, that is where to
+> look. Verified by watching a real video open directly with no pre-roll.
 >
-> The reason is specific rather than general flakiness. YouTube sends the player
-> response three ways; two of them are intercepted and the ad slots removed. The
-> third is inlined into the page's own HTML on a fresh load, where it is script
-> source rather than parsed JSON, so the hooks never see it. uBlock Origin
-> handles that case with a `trusted-` scriptlet — one of 108 in the filter lists
-> that the engine refuses to run by design.
->
-> Everything else on this page is unaffected: banner and display ads on YouTube
-> are still blocked and hidden. Confirmed by watching a real video, not by
-> reading code.
+> The scriptlet library is complete too: the four helper files uBlock Origin
+> keeps outside its scriptlet folder are fetched with it, so every scriptlet
+> whose helpers exist is injectable. The 108 `trusted-` scriptlets are still
+> refused by the engine on purpose.
 
 ---
 
@@ -518,7 +561,7 @@ hid.
 
 |                                    |          ZWebWrap          |        Pake         |    Nativefier     | Ferdium / Rambox | WebCatalog  | Chrome "Install as app" |
 | ---------------------------------- | :------------------------: | :-----------------: | :---------------: | :--------------: | :---------: | :---------------------: |
-| Status                             |   0.1.0, **unreleased**    |       Active        | **Archived 2023** |      Active      | Commercial  |    Built into Chrome    |
+| Status                             |   0.2.0, **unreleased**    |       Active        | **Archived 2023** |      Active      | Commercial  |    Built into Chrome    |
 | Size                               |         **~15 MB**         |       ~10 MB        |      150 MB+      |     150 MB+      |   150 MB+   |          Zero           |
 | **Ad blocking**                    | ✅ **Real filter engine**  | ⚠️ Hand-written CSS |        ❌         |        ❌        | ⚠️ Claimed  |    ⚠️ Browser's own     |
 | Self-updating filter lists         |             ✅             |         ❌          |        ❌         |        ❌        |     ❓      |            —            |
@@ -572,7 +615,7 @@ has no update channel. New versions are rare, and you install one the same way
 you installed the first. The part that genuinely has to stay current — the ad
 filter lists — updates itself.
 
-**Not built yet** — developer tools and DRM playback.
+**Not built yet** — developer tools, DRM playback, WebUSB, Web Serial and Web Bluetooth.
 
 **A stored website login is kept in plain text.** `credentials.json` in your
 data folder is readable by anything running as you. It is owner-only on Linux
@@ -673,18 +716,18 @@ repository root.
 
 ### What you need
 
-|          | Linux                                                                | Windows                                                                   |
-| -------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| **Rust** | stable toolchain                                                     | stable toolchain (MSVC)                                                   |
-| **Node** | 20+                                                                  | 20+                                                                       |
-| **pnpm** | 10+                                                                  | 10+                                                                       |
-| **Also** | `webkit2gtk-4.1`, `librsvg2`, `libayatana-appindicator3`, `patchelf` | Visual Studio Build Tools (C++), WebView2 — already present on Windows 11 |
+|          | Linux                                                                           | Windows                                                                   |
+| -------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Rust** | stable toolchain                                                                | stable toolchain (MSVC)                                                   |
+| **Node** | 20+                                                                             | 20+                                                                       |
+| **pnpm** | 10+                                                                             | 10+                                                                       |
+| **Also** | `webkit2gtk-4.1`, `librsvg2`, `libayatana-appindicator3`, `libudev`, `patchelf` | Visual Studio Build Tools (C++), WebView2 — already present on Windows 11 |
 
 On Debian or Ubuntu:
 
 ```sh
 sudo apt install libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
-                 librsvg2-dev patchelf build-essential libssl-dev
+                 librsvg2-dev patchelf build-essential libssl-dev libudev-dev
 ```
 
 ### Build and run

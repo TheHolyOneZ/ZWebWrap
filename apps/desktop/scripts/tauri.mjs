@@ -1,5 +1,3 @@
-
-
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -9,10 +7,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 const root = resolve(here, "..", "..", "..");
 
-
 const pnpm = process.platform === "win32" ? "cmd.exe" : "pnpm";
 
-
+/** @param {string[]} args */
 function run(args) {
   const command =
     process.platform === "win32"
@@ -33,26 +30,25 @@ function run(args) {
   return result.status ?? 1;
 }
 
-
 function buildEnv() {
   if (process.platform !== "linux") return process.env;
   return { NO_STRIP: "1", ...process.env };
 }
 
-
-function filesIn( dir) {
+/** @param {string} dir */
+function filesIn(dir) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .map((name) => join(dir, name))
     .filter((path) => statSync(path).isFile());
 }
 
-function human( path) {
+/** @param {string} path */
+function human(path) {
   const bytes = statSync(path).size;
   const mb = bytes / 1024 / 1024;
   return `${mb.toFixed(1)} MB`;
 }
-
 
 function installers() {
   const bundle = join(root, "target", "release", "bundle");
@@ -73,11 +69,9 @@ function installers() {
     ],
   };
 
-
   const found = [];
-  for (const [label, dir] of byOs[process.platform] ?? []) {
+  for (const [label, dir] of (/** @type {Record<string, string[][]>} */ (byOs))[process.platform] ?? []) {
     for (const file of filesIn(join(bundle, dir))) {
-
       if (/\.(deb|rpm|AppImage|msi|exe|dmg)$/i.test(file)) {
         found.push([label, file]);
       }
@@ -86,7 +80,7 @@ function installers() {
   return found;
 }
 
-
+/** @param {boolean} ok */
 function report(ok) {
   const line = "─".repeat(64);
   console.log(`\n${line}\n  ${ok ? "Build finished" : "Build reported an error"}\n${line}`);
@@ -128,8 +122,6 @@ if (args.length === 0) {
 const isBuild = args[0] === "build";
 
 if (isBuild) {
-
-
   console.log("\n▸ Building the browser extension…\n");
   const code = run(["--filter", "@zwebwrap/extension", "build"]);
   if (code !== 0) {

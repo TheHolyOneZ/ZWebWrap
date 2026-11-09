@@ -19,6 +19,7 @@ const YOUTUBE: &str = r#"
   window.__zwwYt = true;
 
 
+
   var AD_KEYS = [
     'adPlacements',
     'playerAds',
@@ -68,6 +69,34 @@ const YOUTUBE: &str = r#"
   }
 
 
+  function blankHere(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    for (var i = 0; i < AD_KEYS.length; i++) {
+      if (AD_KEYS[i] in obj) obj[AD_KEYS[i]] = undefined;
+    }
+    return obj;
+  }
+
+  function hookInitialResponse() {
+    var key = 'ytInitialPlayerResponse';
+    var existing = Object.getOwnPropertyDescriptor(window, key);
+    if (existing && !existing.configurable) return;
+    var stored = existing && 'value' in existing ? blankHere(existing.value) : undefined;
+    try {
+      Object.defineProperty(window, key, {
+        configurable: true,
+        enumerable: true,
+        get: function () {
+          return stored;
+        },
+        set: function (next) {
+          stored = blankHere(next);
+        },
+      });
+    } catch (e) {}
+  }
+  hookInitialResponse();
+
 })();
 "#;
 
@@ -101,6 +130,11 @@ mod tests {
 
         assert!(script.contains("JSON.parse"));
         assert!(script.contains("Response.prototype.json"));
+        assert!(script.contains("ytInitialPlayerResponse"));
+        assert!(
+            script.contains("= undefined"),
+            "the inline response must have its ad keys blanked, not deleted: deleting them kills the player"
+        );
 
         assert!(script.contains("__zwwYt"));
     }

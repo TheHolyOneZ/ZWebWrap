@@ -302,7 +302,6 @@ pub fn clear_downloads() -> Vec<crate::downloads::Download> {
 
 #[cfg(test)]
 mod tests {
-
     #[test]
     fn every_command_the_ui_calls_is_permitted() {
         let api = include_str!("../../src/api.ts");

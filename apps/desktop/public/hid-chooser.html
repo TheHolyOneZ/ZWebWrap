@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>ZWebWrap</title>
+<meta name="color-scheme" content="light dark" />
+<style>
+  :root { --bg:#fff; --fg:#1b1b1f; --mut:#6b6b76; --line:#dcdce2; --acc:#3b6cf6; --sel:#e8eefe; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1c1c21; --fg:#ececf1; --mut:#9a9aa6; --line:#34343c; --acc:#6b8cff; --sel:#262d44; } }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 14px system-ui, sans-serif; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; padding: 16px; gap: 12px; user-select: none; }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  ul { list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+  li { padding: 10px 12px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; gap: 12px; }
+  li:last-child { border-bottom: 0; }
+  li:hover { background: var(--sel); }
+  li[aria-selected="true"] { background: var(--sel); box-shadow: inset 3px 0 var(--acc); }
+  li small { color: var(--mut); font-family: ui-monospace, monospace; }
+  .none { flex: 1; display: grid; place-items: center; color: var(--mut); text-align: center; padding: 16px; }
+  .row { display: flex; justify-content: flex-end; gap: 8px; }
+  button { font: inherit; padding: 7px 16px; border-radius: 7px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+  button.primary { background: var(--acc); border-color: var(--acc); color: #fff; }
+  button:disabled { opacity: .45; cursor: default; }
+  :focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+</style>
+</head>
+<body>
+  <h1 id="title"></h1>
+  <ul id="list" role="listbox" tabindex="0"></ul>
+  <div class="row"><button id="cancel"></button><button id="ok" class="primary" disabled></button></div>
+<script>
+(function () {
+  var invoke = window.__TAURI_INTERNALS__.invoke;
+  var list = document.getElementById('list');
+  var ok = document.getElementById('ok');
+  var selected = new Set();
+  var multiple = false;
+
+  function refresh() {
+    ok.disabled = selected.size === 0;
+    Array.prototype.forEach.call(list.children, function (li) {
+      li.setAttribute('aria-selected', selected.has(li.dataset.id) ? 'true' : 'false');
+    });
+  }
+  function pick(id) {
+    if (multiple) { selected.has(id) ? selected.delete(id) : selected.add(id); }
+    else { selected.clear(); selected.add(id); }
+    refresh();
+  }
+  function done() { invoke('hid_chooser_choose', { ids: Array.from(selected) }); }
+  function cancel() { invoke('hid_chooser_cancel'); }
+
+  invoke('hid_chooser_state').then(function (s) {
+    document.getElementById('title').textContent = s.title;
+    document.getElementById('cancel').textContent = s.cancel;
+    ok.textContent = s.connect;
+    multiple = s.multiple;
+    if (!s.devices.length) {
+      var none = document.createElement('div');
+      none.className = 'none';
+      none.textContent = s.none;
+      list.replaceWith(none);
+      return;
+    }
+    s.devices.forEach(function (d) {
+      var li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.dataset.id = d.id;
+      var name = document.createElement('span'); name.textContent = d.name;
+      var detail = document.createElement('small'); detail.textContent = d.detail;
+      li.append(name, detail);
+      li.addEventListener('click', function () { pick(d.id); });
+      li.addEventListener('dblclick', function () { if (!multiple) { selected = new Set([d.id]); done(); } });
+      list.appendChild(li);
+    });
+    list.focus();
+  }, cancel);
+
+  ok.addEventListener('click', done);
+  document.getElementById('cancel').addEventListener('click', cancel);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cancel();
+    if (e.key === 'Enter' && !ok.disabled) done();
+  });
+})();
+</script>
+</body>
+</html>

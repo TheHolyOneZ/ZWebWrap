@@ -1,5 +1,6 @@
 use crate::sources::{
-    Source, DEFAULT_SOURCES, RESOURCES_URL, SCRIPTLETS_DIR_API, SCRIPTLETS_URL, SEED_LIST,
+    Source, DEFAULT_SOURCES, RESOURCES_URL, SCRIPTLETS_DIR_API, SCRIPTLETS_URL,
+    SCRIPTLET_SUPPORT_FILES, SEED_LIST,
 };
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -227,6 +228,18 @@ async fn fetch_scriptlet_library(client: &reqwest::Client) -> Result<String> {
             }
 
             Err(e) => tracing::debug!(file = %name, error = %e, "scriptlet file skipped"),
+        }
+    }
+
+    for url in SCRIPTLET_SUPPORT_FILES {
+        match fetch_text(client, url).await {
+            Ok(text) => {
+                combined.push_str(&text);
+                combined.push('\n');
+            }
+            Err(e) => {
+                tracing::warn!(%url, error = %e, "a scriptlet helper could not be downloaded")
+            }
         }
     }
 

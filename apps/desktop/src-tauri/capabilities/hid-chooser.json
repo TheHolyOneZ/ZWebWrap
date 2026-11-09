@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "hid-chooser",
+  "description": "The native WebHID device chooser. It loads bundled local content only.",
+  "windows": [
+    "hid-chooser-*"
+  ],
+  "permissions": [
+    "allow-hid-chooser"
+  ]
+}
